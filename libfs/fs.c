@@ -207,34 +207,32 @@ int fs_ls(void)
 
 }
 
-
-int fs_open(const char *filename)
-{
+//int fs_open(const char *filename)
+//{
 	/* TODO: Phase 3 */
-}
+//}
 
-int fs_close(int fd)
-{
+//int fs_close(int fd)
+//{
 	/* TODO: Phase 3 */
-}
+//}
 
-int fs_stat(int fd)
-{
+//int fs_stat(int fd)
+//{
 	/* TODO: Phase 3 */
-}
+//}
 
-int fs_lseek(int fd, size_t offset)
-{
+//int fs_lseek(int fd, size_t offset)
+//{
 	/* TODO: Phase 3 */
-}
+//}
 
-int fs_write(int fd, void *buf, size_t count)
-{
+//int fs_write(int fd, void *buf, size_t count)
+//{
 	/* TODO: Phase 4 */
-}
+//}
 
-int fs_read(int fd, void *buf, size_t count)
-{
+//int fs_read(int fd, void *buf, size_t count)
+//{
 	/* TODO: Phase 4 */
-}
-
+//}

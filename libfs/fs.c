@@ -164,12 +164,7 @@ int fs_delete(const char *filename)
 {
 	/* TODO: Phase 2 */
 	int slot;
-
-	//file doesnt exist check
-	if(slot == FS_FILE_MAX_COUNT) {
-		return -1;
-	}
-
+	
 	//deleting 
 	for (slot = 0; slot < FS_FILE_MAX_COUNT; slot++) {
 		//if file found in block 
@@ -184,6 +179,12 @@ int fs_delete(const char *filename)
 			break;
 		}
 	}
+
+	//file doesnt exist check
+	if(slot == FS_FILE_MAX_COUNT) {
+		return -1;
+	}
+
 	return 0; 
 }
 

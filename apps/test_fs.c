@@ -143,18 +143,18 @@ void thread_fs_script(void *arg)
 			printf("CLOSE successful.\n");
 
 		/*} else if (strcmp(command, "SEEK") == 0) {
-			offset = atoi(command_args[1]);
+			offset = atoi(command_args[1]);*/
 
-			if (fs_lseek(fs_fd, offset)) {
+			/*if (fs_lseek(fs_fd, offset)) {
 				fs_umount();
 				die("Cannot seek to position");
 			} else {
 				printf("SEEK successful.\n");
-			}
-
-		} else if (strcmp(command, "WRITE") == 0) {
+			}*/
+			/*
+			}else if (strcmp(command, "WRITE") == 0) {
 			data_source = command_args[1];
-			data_description = command_args[2];
+			data_description = command_args[2];*/
 */
 			if (strcmp(data_source, "DATA") == 0) {
 				data = data_description;
@@ -184,13 +184,14 @@ void thread_fs_script(void *arg)
 				fs_umount();
 				die_perror("Could not find data to write");
 			}
-/*
-			count = fs_write(fs_fd, data, data_size);
-			if (count < 0) {
+
+			//count = fs_write(fs_fd, data, data_size);
+			/*if (count < 0) {
 				fs_umount();
 				die("write error");
-			}
-			printf("Wrote %d bytes to file.\n", count); */
+			}*/
+			//printf("Wrote %d bytes to file.\n", count); 
+			
 
 		} else if (strcmp(command, "READ") == 0) {
 			int read_req_length = atoi(command_args[1]);
@@ -239,7 +240,7 @@ void thread_fs_script(void *arg)
 				die("invalid data read length");
 			}
 
-			read_buf = calloc(read_req_length+1, sizeof(char));
+			//read_buf = calloc(read_req_length+1, sizeof(char));
 			//count = fs_read(fs_fd, read_buf, read_req_length);
 
 			if (count < 0) {

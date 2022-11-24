@@ -61,7 +61,7 @@ int fs_mount(const char *diskname)
 	/* Superblock error catching */
 
 	//signature error check
-	if ((char*)sup_inst->signature != SIG) {
+	if (strncmp((char*)sup_inst->signature), SIG, 8) {
 		return -1; 
 	}
 
@@ -76,14 +76,14 @@ int fs_mount(const char *diskname)
 	}
 
 	//first data block index check
-	if(sup_inst->block1_index != (sup_inst->root_index+1)){
+	if(sup_inst->block_start_index != (sup_inst->root_index+1)){
 		return -1;
 	}
 
 	/* Error catching for FAT*/
 
 	//check EOC value 
-	if(fat_inst[0] != FAT_EOC) {
+	if(fat_inst[0].flat_array != FAT_EOC) {
 		return -1;
 	}
 
@@ -110,7 +110,7 @@ int fs_info(void)
 	printf("File system info: \n \n");
 	printf("Total amount of blocks of virtual disk: %d \n",sup_inst->tot_blocks);
 	printf("Root directory block index: %d \n",sup_inst->root_index);
-	printf("Data block start index: %d \n",sup_inst->block1_index);
+	printf("Data block start index: %d \n",sup_inst->block_start_index);
 	printf("Number of data blocks: %d \n",sup_inst->data_blocks);
 	printf("Number of blocks for FAT: %d \n",sup_inst->fat_blocks);
 

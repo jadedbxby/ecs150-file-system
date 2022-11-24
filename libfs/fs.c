@@ -188,9 +188,9 @@ int fs_info(void)
 	/* TODO: Phase 1 */
 
 	printf("FS Info: \n ");
-	printf("total_blk_count= %d \n",sup_inst->tot_blocks);
-	printf("fat_blk_count= %d \n",sup_inst->fat_blocks);
-	printf("rdir_blk=: %d \n",sup_inst->root_index);
+	printf("total_blk_count=%d \n",sup_inst->tot_blocks);
+	printf("fat_blk_count=%d \n",sup_inst->fat_blocks);
+	printf("rdir_blk=%d \n",sup_inst->root_index);
 	printf("data_blk=%d\n", sup_inst->block_start_index);
 	printf("data_blk_count=%d\n",sup_inst->data_blocks);
 

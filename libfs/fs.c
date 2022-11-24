@@ -61,7 +61,7 @@ int fs_mount(const char *diskname)
 	/* Superblock error catching */
 
 	//signature error check
-	if (strncmp((char*)sup_inst->signature), SIG, 8) {
+	if (strncmp((char*)(sup_inst->signature), SIG, 8)) {
 		return -1; 
 	}
 

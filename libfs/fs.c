@@ -344,7 +344,7 @@ int block_ind(int fd)
 {
 	int fdIndex = file_index(fd); 
 	int rootIndex = file[fdIndex].index;
-	uint16_t dataIndex = root_inst[root_index].block1_index; 
+	uint16_t dataIndex = root_inst[rootIndex].block1_index; 
 
 	int offset = file[fd].offset;
 	while(offset >= BLOCK_SIZE) { //iterate thru blocks
@@ -354,7 +354,7 @@ int block_ind(int fd)
 		offset = offset - BLOCK_SIZE;
 	}
 
-	return dataIndex + sup_inst->indexFirstBlock;
+	return dataIndex + sup_inst->block1_index;
 }
 
 int fs_read(int fd, void *buf, size_t count)

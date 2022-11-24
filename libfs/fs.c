@@ -185,7 +185,7 @@ int fs_create(const char *filename)
 
 	//find free fat block and remap everything 
 	int free_slot;
-	for (free_slot = 0; free_slot< FS_FILE_MAX_COUNT; free_slot++) {
+	for (free_slot = 0; free_slot < FS_FILE_MAX_COUNT; free_slot++) {
 		if((char) *(root_inst[free_slot].file_name) == '\0') {
 			strcpy((char*) root_inst[free_slot].file_name, filename);
 			root_inst[free_slot].file_size = 0;
@@ -234,12 +234,11 @@ int fs_delete(const char *filename)
 int fs_ls(void)
 {
 	/* TODO: Phase 2 */
-
-	for(int i = 0; i < FS_FILE_MAX_COUNT; i++) {
+	int i;
+	for(i = 0; i < FS_FILE_MAX_COUNT; i++) {
 		//non empty filename check
 		if((char)*(root_inst[i].file_name) != '\0') {
-			printf("List of files in the system: \n");
-			printf("file: %s", root_inst[i].file_name);
+			printf("file: %s,size: %d, data_blk: %d\n", root_inst[i].file_name, root_inst[i].file_size, root_inst[i].block1_index);
 		}
 	}
 
@@ -247,6 +246,7 @@ int fs_ls(void)
 	if(block_disk_count() == -1) {
 		return -1;
 	}
+
 	return 0; 
 }
 

@@ -117,7 +117,7 @@ int fs_info(void)
 	return 0; 
 }
 
-//Helper function to search for free FAT block to create fiel in
+//Helper function to search for free FAT block to create file in
 int free_fat() {
 	uint16_t i = 1;
 	while (i< sup_inst->data_blocks) {
@@ -142,8 +142,8 @@ int fs_create(const char *filename)
 
 	//find free fat block and remap everything 
 	int free_slot;
-	for (free_slot = 0; j< FS_FILE_MAX_COUNT; i++) {
-		if((char)*(root_inst[free_slot]) == '\0') {
+	for (free_slot = 0; free_slot< FS_FILE_MAX_COUNT; free_slot++) {
+		if((char*)(root_inst[free_slot].file_name) == '\0') {
 			strcpy((char*) root_inst[free_slot].file_name, filename);
 			root_inst[free_slot].file_size = 0;
 			root_inst[free_slot].block1_index = free_fat();
@@ -153,7 +153,7 @@ int fs_create(const char *filename)
 	}
 
 	//no more free space check
-	if(free_space == FS_FILE_MAX_COUNT) {
+	if(free_slot == FS_FILE_MAX_COUNT) {
 		return -1;
 	}
 

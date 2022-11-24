@@ -173,7 +173,7 @@ int fs_delete(const char *filename)
 	//deleting 
 	for (slot = 0; slot < FS_FILE_MAX_COUNT; slot++) {
 		//if file found in block 
-		if(strcmp((char*)root_inst[slot].file_name), filename, strlen(filename) == 0) {
+		if(strncmp((char*)root_inst[slot].file_name, filename, strlen(filename)) == 0) {
 			uint16_t i = root_inst[slot].block1_index;
 			//go through entrres in fat and empty it 
 			while(i != FAT_EOC) {
@@ -195,7 +195,7 @@ int fs_ls(void)
 		//non empty filename check
 		if((char)*(root_inst[i].file_name) != '\0') {
 			printf("List of files in the system: \n");
-			printf("file: %s", root_inst[i],file_name);
+			printf("file: %s", root_inst[i].file_name);
 		}
 	return 0; 
 	}

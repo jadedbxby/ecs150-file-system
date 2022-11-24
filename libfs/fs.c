@@ -57,7 +57,42 @@ static root root_inst[128];
 /* Instantiate file descriptor */
 static FileDescriptor file[FS_OPEN_MAX_COUNT]; 
 static int openFiles = 0;
-static int fileID;
+static int fileID = 0;
+
+/* helper functions to initialize metadata blocks*/
+int init_sup() {
+    sup_inst = malloc(BLOCK_SIZE);
+    block_read(0,sup_inst);
+    return 0;
+}
+
+int init_fat() {
+    fat_inst = malloc((sup_inst->fat_blocks)*BLOCK_SIZE);
+    
+    int i;
+	for(i = 1; i <= sup_inst->fat_blocks; i++) {
+		block_read(i, (char*)fat_inst + BLOCK_SIZE*(i-1));
+	}
+
+    return 0;
+	
+}
+
+int init_root() {
+    block_read(sup_inst->root_index, root_inst);
+    return 0; 
+}
+
+/* PHASE 3: Initialize fd*/
+int init_fd(){	
+    for (int i = 0; i < FS_OPEN_MAX_COUNT; i++) {
+		file[i].id = -1;
+		file[i].offset = 0;
+		file[i].index = -1;
+	}
+    return 0;
+}
+
 
 int fs_mount(const char *diskname)
 {
@@ -68,9 +103,13 @@ int fs_mount(const char *diskname)
 		return -1; 
 	}
 
-	//Initialize metadata blocks 
-	sup_inst = malloc(BLOCK_SIZE);
-	fat_inst = malloc((sup_inst->fat_blocks)*BLOCK_SIZE);
+    //initialize metadata
+    init_sup();
+    init_fat();
+    init_root();
+    
+    init_fd();
+
 
 	/* Superblock error catching */
 
@@ -101,12 +140,6 @@ int fs_mount(const char *diskname)
 		return -1;
 	}
 
-	/* PHASE 3: Initialize fd*/
-	for (int i = 0; i < FS_OPEN_MAX_COUNT; i++) {
-		file[i].id = -1;
-		file[i].offset = 0;
-		file[i].index = -1;
-	}
 
 	return 0;
 
@@ -115,7 +148,13 @@ int fs_mount(const char *diskname)
 int fs_umount(void)
 {
 	/* TODO: Phase 1 */
+	block_write(0, sup_inst);
+	for (int i = 1; i <= sup_inst->fat_blocks; i++) {
+		block_write(i, (char*)fat_inst + BLOCK_SIZE*(i - 1));
+	}
 
+	block_write(sup_inst->root_index, root_inst);
+    
 	//check for failed to close the disk
 	if (block_disk_close() != 0) {
 		return -1;

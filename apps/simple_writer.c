@@ -37,8 +37,8 @@ int main(int argc, char *argv[])
 	ASSERT(fd >= 0, "fs_open");
 
 	/* Write some data */
-	ret = fs_write(fd, data, sizeof(data));
-	ASSERT(ret == sizeof(data), "fs_write");
+	//ret = fs_write(fd, data, sizeof(data));
+	//ASSERT(ret == sizeof(data), "fs_write");
 
 	/* Close file and unmount */
 	fs_close(fd);

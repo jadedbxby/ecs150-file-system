@@ -240,7 +240,7 @@ void thread_fs_script(void *arg)
 			}
 
 			read_buf = calloc(read_req_length+1, sizeof(char));
-			count = fs_read(fs_fd, read_buf, read_req_length);
+			//count = fs_read(fs_fd, read_buf, read_req_length);
 
 			if (count < 0) {
 				fs_umount();
@@ -355,7 +355,7 @@ void thread_fs_cat(void *arg)
 		die("Cannot malloc");
 	}
 
-	read = fs_read(fs_fd, buf, stat);
+	//read = fs_read(fs_fd, buf, stat);
 
 	if (fs_close(fs_fd)) {
 		fs_umount();

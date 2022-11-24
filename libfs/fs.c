@@ -69,6 +69,7 @@ int init_sup() {
 int init_fat() {
     fat_inst = malloc((sup_inst->fat_blocks)*BLOCK_SIZE);
     
+	//
     int i;
 	for(i = 1; i <= sup_inst->fat_blocks; i++) {
 		block_read(i, (char*)fat_inst + BLOCK_SIZE*(i-1));
@@ -216,8 +217,6 @@ int fs_create(const char *filename)
 {
 	/* TODO: Phase 2 */
 
-	//valid filename check 
-
 	//valid filename length check
 	if(strlen(filename)*sizeof(char) > FS_FILENAME_LEN){
 		return -1;
@@ -226,6 +225,7 @@ int fs_create(const char *filename)
 	//find free fat block and remap everything 
 	int free_slot;
 	for (free_slot = 0; free_slot < FS_FILE_MAX_COUNT; free_slot++) {
+		//if root index pointed to is empty 
 		if((char) *(root_inst[free_slot].file_name) == '\0') {
 			strcpy((char*) root_inst[free_slot].file_name, filename);
 			root_inst[free_slot].file_size = 0;
@@ -247,13 +247,11 @@ int fs_delete(const char *filename)
 {
 	/* TODO: Phase 2 */
 	int slot;
-	
-	//deleting 
 	for (slot = 0; slot < FS_FILE_MAX_COUNT; slot++) {
 		//if file found in block 
 		if(strncmp((char*)root_inst[slot].file_name, filename, strlen(filename)) == 0) {
-			uint16_t i = root_inst[slot].block1_index;
-			//go through entrres in fat and empty it 
+			uint16_t i = root_inst[slot].block1_index; 
+			//go through entrees in fat and empty it 
 			while(i != FAT_EOC) {
 				uint16_t j = fat_inst[i].flat_array;
 				fat_inst[i].flat_array = 0;
@@ -263,7 +261,7 @@ int fs_delete(const char *filename)
 		}
 	}
 
-	//file doesnt exist check
+	//file not there check
 	if(slot == FS_FILE_MAX_COUNT) {
 		return -1;
 	}
@@ -293,24 +291,27 @@ int fs_ls(void)
 int fs_open(const char *filename)
 {
 	/* TODO: Phase 3 */
-	if (openFiles > FS_OPEN_MAX_COUNT) // 
+	//max allowed open files check
+	if (openFiles > FS_OPEN_MAX_COUNT) 
 		return -1;
 
 	for (int j = 0; j < FS_FILE_MAX_COUNT; j++) {
+		//filename match found 
 		if (strncmp((char*)root_inst[j].file_name, filename, strlen(filename)) == 0) {
+			//look for epty entree to open to
 			for (int k = 0; k < FS_FILE_MAX_COUNT; k++) {
 				if (file[k].id == -1) {
 					file[k].id = fileID;
 					file[k].index = j;
-					file[k].offset = 0; // change offset?
+					file[k].offset = 0; 
 					fileID++;
 					openFiles++;
-					return file[k].id;
+					return file[k].id; // file id to open to
 				}
 			}
 		}
 	}
-	return -1;
+	return -1; //filename mathc not found 
 }
 
 int fs_close(int fd)
@@ -322,6 +323,7 @@ int fs_close(int fd)
 
 	int i;
 	for (i = 0; i < FS_OPEN_MAX_COUNT; i++) {
+		//file found at correct fd check
 		if (file[i].id == fd) {
 			file[i].id = -1;
 			file[i].offset = 0;
@@ -330,42 +332,47 @@ int fs_close(int fd)
 			return 0;
 		}
 	}
-	return -1;
+	return -1; //file not found check
 }
 }
 
 int fs_stat(int fd)
 {
 	/* TODO: Phase 3 */
-	if (fd > fileID || fd < 0) //wrong descriptor check 
+	//wrong descriptor check 
+	if (fd > fileID || fd < 0) 
 		return -1;
-
+	
 	int i;
 	for (i = 0; i < FS_OPEN_MAX_COUNT; i++) {
+		//file found at correct fd check
 		if (file[i].id == fd)
 			return root_inst[file[i].index].file_size;
 	}
-	return -1;
+	return -1; //file not found check
 }
 
 int fs_lseek(int fd, size_t offset)
 {
 	/* TODO: Phase 3 */
 	int fd_size = fs_stat(fd);
+	//wrong file size check
+	//out of scope check 
 	if(fd_size == -1 || (int)offset > fd_size)
 		return -1;
 	
 	int i;
 	for(i = 0; i< FS_OPEN_MAX_COUNT; i++) {
+		//file found at correct fd check
 		if(file[i].id == fd) {
 			file[i].offset = offset;
 			return 0;
 		}
 	}
-	return -1;
+	return -1; //file not found check
 }
 
-/* Get fd_index in the open file descriptor*/
+/* Helper function to get fd_index of the open file descriptor */
 int file_index(int fd)
 {
 	if (fd > fileID || fd < 0)
@@ -378,143 +385,162 @@ int file_index(int fd)
 	}
 	return -1; // fd not found
 }
-
-int block_ind(int fd)
+/* Helper function to get data block at offset */
+int block_index(int fd)
 {
 	int fdIndex = file_index(fd); 
 	int rootIndex = file[fdIndex].index;
 	uint16_t dataIndex = root_inst[rootIndex].block1_index; 
 
 	int offset = file[fd].offset;
+	//out of scope offset check
 	while(offset >= BLOCK_SIZE) { //iterate thru blocks
 		dataIndex = fat_inst[dataIndex].flat_array;
+		//end of fat block reahched -> nothing allocated
 		if (dataIndex == FAT_EOC) 
 			return -1;
 		offset = offset - BLOCK_SIZE;
 	}
-
+	//return index at offset 
 	return dataIndex + sup_inst->block_start_index;
 }
 
 int fs_read(int fd, void *buf, size_t count)
 {
 	/* TODO: Phase 4 */
-	int fdIndex = file_index(fd);
+	int fdIndex = file_index(fd); //current fd
+	
+	//invalid fd check 
 	if (fdIndex == -1)
 		return -1; 
 
-	int buf_off = 0; 
-	size_t toRead = count; 
-	size_t leftOff, rightOff, bytesRead; 
+	int buf_off = 0; //offset
+	size_t remainR = count; //bytes to read from
+	size_t leftOff, rightOff;
+	size_t bytesRead; //number of bytes read from
 
 	int i = 0; 
-	while(toRead != 0) { 
+	//while not done reading 
+	while(remainR != 0) { 
 
 		leftOff = 0;
+		//fisrt block read check
 		if (i == 0)
 			leftOff = file[fdIndex].offset % BLOCK_SIZE;
 	
 		rightOff = 0;
-		if (toRead + leftOff < BLOCK_SIZE) {
-			rightOff = BLOCK_SIZE - toRead - leftOff;
+		//last block read check 
+		if (remainR + leftOff < BLOCK_SIZE) {
+			rightOff = BLOCK_SIZE - remainR - leftOff;
 		}
 
-		
+		//read into buffer
 		void *bounceBuffer = malloc(BLOCK_SIZE);
-		if (block_read(block_ind(fd), bounceBuffer) == -1) {
+		if (block_read(block_index(fd), bounceBuffer) == -1) {
 			fprintf(stderr, "Error in block reading");
-			return count - toRead; 
+			return count - remainR; 
 		}
 
-
+		//read into buffer 
 		bytesRead = BLOCK_SIZE - leftOff - rightOff;
 		memcpy((char*)buf+buf_off, (char*)bounceBuffer+leftOff, bytesRead); 
 
-		
-		file[fd].offset = file[fd].offset + bytesRead; 
-		buf_off = buf_off + bytesRead;
-		toRead = toRead - bytesRead; 
+		//var increment 
+		file[fd].offset = file[fd].offset + bytesRead; //offset
+		buf_off = buf_off + bytesRead; //read buffer offset
+		remainR = remainR - bytesRead; //left to read
 		free(bounceBuffer);
 		i++;
 	}
 
-	return count - toRead; 
+	return count - remainR; //total number read
 }
 
-
+//change file size at fd 
 void set_file_size(int fd, int inc) {
-	int fdIndex = file_index(fd); 
-	int rootIndex = file[fdIndex].index;
+	int fdIndex = file_index(fd); //current fd 
+	int rootIndex = file[fdIndex].index; //root 
 	root_inst[rootIndex].file_size += inc;
 }
 
+/* Helper function to add more blocks */
+void add_block(int fd){
 
-void allocate_block(int fd){
-
-	int fdIndex = file_index(fd);
-	int rootIndex = file[fdIndex].index;
-	uint16_t dataIndex = root_inst[rootIndex].block1_index;
+	int fdIndex = file_index(fd); //current fd
+	int rootIndex = file[fdIndex].index; //root
+	uint16_t dataIndex = root_inst[rootIndex].block1_index; 
 	uint16_t i = dataIndex; 
+	//while not end of block
 	while(fat_inst[i].flat_array != FAT_EOC){
 		i = fat_inst[i].flat_array;
 	}
 
 	int newIndex;
+	//block is full check
 	if ((newIndex = free_fat()) == -1) { 
 		return;
 	} else {
-		fat_inst[i].flat_array = newIndex;
-		fat_inst[fat_inst[i].flat_array].flat_array = FAT_EOC;
+		fat_inst[i].flat_array = newIndex; 
+		fat_inst[fat_inst[i].flat_array].flat_array = FAT_EOC; //remap end of fat 
 	}
 }
 
 int fs_write(int fd, void *buf, size_t count)
 {
 	/* TODO: Phase 4 */
-	int fdIndex = file_index(fd);
+	int fdIndex = file_index(fd); //current fd
+	
+	//invalid fd check 
 	if (fdIndex == -1)
 		return -1; 
 
-	int buf_off = 0; 
-	size_t toWrite = count; 
-	size_t leftOff, rightOff, bytes_w; 
+	int buf_off = 0; //offset
+	size_t remainW = count; //bytes to write to
+	size_t leftOff, rightOff; 
+	size_t bytes_w; //number of bytes written to
 
 	int i = 0; 
-	while(toWrite != 0) { 
 
-		leftOff = 0;
+	//while not done writing
+	while(remainW != 0) { 
+		leftOff = 0; 
 		if (i == 0)
 			leftOff = file[fdIndex].offset % BLOCK_SIZE;
 
 		rightOff = 0;
-		if (toWrite + leftOff < BLOCK_SIZE) {
-			rightOff = BLOCK_SIZE - toWrite - leftOff;
+		if (remainW + leftOff < BLOCK_SIZE) {
+			rightOff = BLOCK_SIZE - remainW - leftOff;
 		}
 
+		//write into buffer
 		void *bounceBuffer = malloc(BLOCK_SIZE);
-		if (block_ind(fd) == -1) { 
+		//block is full check
+		if (block_index(fd) == -1) { 
+			//disk is full check
 			if (free_fat_count() <= 0) { 
-				set_file_size(fd, count - toWrite);
-				return count - toWrite; 
+				set_file_size(fd, count - remainW);
+				return count - remainW; //total number written
 			} else { 
-				allocate_block(fd);
+				//add new block
+				add_block(fd);
 			}
 		} else {
-			block_read(block_ind(fd), bounceBuffer);
+			block_read(block_index(fd), bounceBuffer);
 		}
 
-		
+		//write into remaining free space
 		bytes_w = BLOCK_SIZE - leftOff - rightOff;
 		memcpy((char*)bounceBuffer+leftOff, (char*)buf+buf_off, bytes_w); 
 
-		block_write(block_ind(fd), bounceBuffer); 
+		block_write(block_index(fd), bounceBuffer); 
 
+		//var increment 
 		file[fd].offset = file[fd].offset + bytes_w; 
 		buf_off = buf_off + bytes_w; 
-		toWrite = toWrite - bytes_w;
+		remainW = remainW - bytes_w;
 		free(bounceBuffer);
 		i++;
 	}
-	set_file_size(fd, count - toWrite);
-	return count - toWrite; 
+	set_file_size(fd, count - remainW); //update remaining space
+	return count - remainW; //total number written
 }

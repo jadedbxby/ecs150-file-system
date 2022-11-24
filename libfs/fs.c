@@ -143,7 +143,7 @@ int fs_create(const char *filename)
 	//find free fat block and remap everything 
 	int free_slot;
 	for (free_slot = 0; free_slot< FS_FILE_MAX_COUNT; free_slot++) {
-		if((char*)(root_inst[free_slot].file_name) == '\0') {
+		if((char) *(root_inst[free_slot].file_name) == '\0') {
 			strcpy((char*) root_inst[free_slot].file_name, filename);
 			root_inst[free_slot].file_size = 0;
 			root_inst[free_slot].block1_index = free_fat();

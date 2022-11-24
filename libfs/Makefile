@@ -29,4 +29,4 @@ libfs.a: $(objs)
 
 #Cleaning rule
 clean: 
-	$(Q)rm -rf $(objs) $(deps) 
+	$(Q)rm -f $(targets) $(objs) $(deps) 

@@ -13,7 +13,7 @@ CFLAGS := -Wall -Wextra -Werror
 CFLAGS += -g 
 
 #Object files 
-objs := fs.o disk.o test_fs.o simple_reader.o simple_writer.o 
+objs := fs.o disk.o 
 
 #Include dependencies
 deps := $(patsubst %.o,%.d,$(objs))

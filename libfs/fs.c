@@ -123,16 +123,39 @@ int fs_umount(void)
 	return 0; 
 }
 
+//Count free fat blocks
+int free_fat_count() {
+	int c = 0;
+	for (int i=1; i < sup_inst->data_blocks; i++) { 
+		if(fat[i].content == 0) //check if empty 
+			count++;
+	}
+	return c;
+}
+
+//Count root dir entries 
+int free_rdir_count() {
+	int c = 0;
+	for (int i=0; i < FS_FILE_MAX_COUNT; i++) {
+		if((char)*(root_inst[i].file_name) == '\0') //if entry is empty
+			c++;
+	}
+	return c;
+}
+
 int fs_info(void)
 {
 	/* TODO: Phase 1 */
 
-	printf("File system info: \n \n");
-	printf("Total amount of blocks of virtual disk: %d \n",sup_inst->tot_blocks);
-	printf("Root directory block index: %d \n",sup_inst->root_index);
-	printf("Data block start index: %d \n",sup_inst->block_start_index);
-	printf("Number of data blocks: %d \n",sup_inst->data_blocks);
-	printf("Number of blocks for FAT: %d \n",sup_inst->fat_blocks);
+	printf("FS Info: \n ");
+	printf("total_blk_count= %d \n",sup_inst->tot_blocks);
+	printf("fat_blk_count= %d \n",sup_inst->fat_blocks);
+	printf("rdir_blk=: %d \n",sup_inst->sup_inst->root_index);
+	printf("data_blk=%d\n", sup_inst->block_start_index);
+	printf("data_blk_count=%d\n: %d \n",sup_inst->data_blocks);
+
+	printf("fat_free_ratio=%d/%d\n", free_fat_count(), sup_inst->data_blocks);
+	printf("rdir_free_ratio=%d/128\n", free_rdir_count());
 
 	return 0; 
 }

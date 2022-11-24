@@ -197,14 +197,13 @@ int fs_ls(void)
 			printf("List of files in the system: \n");
 			printf("file: %s", root_inst[i].file_name);
 		}
-	return 0; 
 	}
 
 	//no disk opened check 
 	if(block_disk_count() == -1) {
 		return -1;
 	}
-
+	return 0; 
 }
 
 //int fs_open(const char *filename)

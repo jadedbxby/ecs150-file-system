@@ -313,7 +313,7 @@ int fs_lseek(int fd, size_t offset)
 {
 	/* TODO: Phase 3 */
 	int fd_size = fs_stat(fd);
-	if(fd_size == -1 || offset > fd_size)
+	if(fd_size == -1 || (int)offset > fd_size)
 		return -1;
 	
 	int i;
@@ -329,7 +329,7 @@ int fs_lseek(int fd, size_t offset)
 /* Get fd_index in the open file descriptor*/
 int file_index(int fd)
 {
-	if (fd > idCount || fd < 0)
+	if (fd > fileID || fd < 0)
 		return -1; //invalid fd
 
 	for(int i = 0; i < FS_OPEN_MAX_COUNT; i++) {
@@ -344,17 +344,17 @@ int block_ind(int fd)
 {
 	int fdIndex = file_index(fd); 
 	int rootIndex = file[fdIndex].index;
-	uint16_t dataIndex = root[rootIndex].indexFirstBlock; 
+	uint16_t dataIndex = root_inst[root_index].block1_index; 
 
 	int offset = file[fd].offset;
 	while(offset >= BLOCK_SIZE) { //iterate thru blocks
-		dataIndex = fat[dataIndex].content;
+		dataIndex = fat_inst[dataIndex].flat_array;
 		if (dataIndex == FAT_EOC) 
 			return -1;
 		offset = offset - BLOCK_SIZE;
 	}
 
-	return dataIndex + sblk->dataIndex;
+	return dataIndex + sup_inst->indexFirstBlock;
 }
 
 int fs_read(int fd, void *buf, size_t count)
@@ -403,10 +403,10 @@ int fs_read(int fd, void *buf, size_t count)
 }
 
 
-void set_file_size(int fd, int sizeInc) {
+void set_file_size(int fd, int inc) {
 	int fdIndex = file_index(fd); 
 	int rootIndex = file[fdIndex].index;
-	root[rootIndex].size += sizeInc;
+	root_inst[rootIndex].file_size += inc;
 }
 
 
@@ -414,18 +414,18 @@ void allocate_block(int fd){
 
 	int fdIndex = file_index(fd);
 	int rootIndex = file[fdIndex].index;
-	uint16_t dataIndex = root[rootIndex].indexFirstBlock;
+	uint16_t dataIndex = root_inst[rootIndex].block1_index;
 	uint16_t i = dataIndex; 
-	while(fat[i].content != FAT_EOC){
-		i = fat[i].content;
+	while(fat_inst[i].flat_array != FAT_EOC){
+		i = fat_inst[i].flat_array;
 	}
 
 	int newIndex;
-	if ((newIndex = find_empty_fat()) == -1) { 
+	if ((newIndex = free_fat()) == -1) { 
 		return;
 	} else {
-		fat[i].content = newIndex;
-		fat[fat[i].content].content = FAT_EOC;
+		fat_inst[i].flat_array = newIndex;
+		fat_inst[fat_inst[i].flat_array].flat_array = FAT_EOC;
 	}
 }
 
@@ -454,7 +454,7 @@ int fs_write(int fd, void *buf, size_t count)
 
 		void *bounceBuffer = malloc(BLOCK_SIZE);
 		if (block_ind(fd) == -1) { 
-			if (num_free_fat() <= 0) { 
+			if (free_fat_count() <= 0) { 
 				set_file_size(fd, count - toWrite);
 				return count - toWrite; 
 			} else { 

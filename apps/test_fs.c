@@ -142,7 +142,7 @@ void thread_fs_script(void *arg)
 
 			printf("CLOSE successful.\n");
 
-		} else if (strcmp(command, "SEEK") == 0) {
+		/*} else if (strcmp(command, "SEEK") == 0) {
 			offset = atoi(command_args[1]);
 
 			if (fs_lseek(fs_fd, offset)) {
@@ -155,7 +155,7 @@ void thread_fs_script(void *arg)
 		} else if (strcmp(command, "WRITE") == 0) {
 			data_source = command_args[1];
 			data_description = command_args[2];
-
+*/
 			if (strcmp(data_source, "DATA") == 0) {
 				data = data_description;
 				data_size = strlen(data);
@@ -184,13 +184,13 @@ void thread_fs_script(void *arg)
 				fs_umount();
 				die_perror("Could not find data to write");
 			}
-
+/*
 			count = fs_write(fs_fd, data, data_size);
 			if (count < 0) {
 				fs_umount();
 				die("write error");
 			}
-			printf("Wrote %d bytes to file.\n", count);
+			printf("Wrote %d bytes to file.\n", count); */
 
 		} else if (strcmp(command, "READ") == 0) {
 			int read_req_length = atoi(command_args[1]);
@@ -398,7 +398,7 @@ void thread_fs_rm(void *arg)
 	printf("Removed file '%s'\n", filename);
 }
 
-void thread_fs_add(void *arg)
+/*void thread_fs_add(void *arg)
 {
 	struct thread_arg *t_arg = arg;
 	char *diskname, *filename, *buf;
@@ -410,26 +410,26 @@ void thread_fs_add(void *arg)
 		die("Usage: <diskname> <host filename>");
 
 	diskname = t_arg->argv[0];
-	filename = t_arg->argv[1];
+	filename = t_arg->argv[1]; */
 
 	/* Open file on host computer */
-	fd = open(filename, O_RDONLY);
+	/*fd = open(filename, O_RDONLY);
 	if (fd < 0)
 		die_perror("open");
 	if (fstat(fd, &st))
 		die_perror("fstat");
 	if (!S_ISREG(st.st_mode))
-		die("Not a regular file: %s\n", filename);
+		die("Not a regular file: %s\n", filename);*/
 
-	/* Map file into buffer */
+	/* Map file into buffer 
 	buf = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (!buf)
-		die_perror("mmap");
+		die_perror("mmap"); */
 
 	/* Now, deal with our filesystem:
 	 * - mount, create a new file, copy content of host file into this new
 	 *   file, close the new file, and umount
-	 */
+	 
 	if (fs_mount(diskname))
 		die("Cannot mount diskname");
 
@@ -459,7 +459,7 @@ void thread_fs_add(void *arg)
 
 	munmap(buf, st.st_size);
 	close(fd);
-}
+}*/
 
 void thread_fs_ls(void *arg)
 {

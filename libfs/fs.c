@@ -40,10 +40,23 @@ typedef struct __attribute__((__packed__)) root_dir {
 }root;
 
 
+//File Descriptor 
+typedef struct FileDescriptor{
+	int id;
+	int offset;
+	int index; // index of the file of the root directory
+}FileDescriptor;
+
+
 /* Instantiate local datastructs */
 static superblock* sup_inst;
 static fat* fat_inst;
 static root root_inst[128]; 
+
+/* Instantiate file descriptor */
+static FileDescriptor file[FS_OPEN_MAX_COUNT]; 
+static int openFiles = 0;
+static int fileID;
 
 int fs_mount(const char *diskname)
 {
@@ -85,6 +98,13 @@ int fs_mount(const char *diskname)
 	//check EOC value 
 	if(fat_inst[0].flat_array != FAT_EOC) {
 		return -1;
+	}
+
+	/* PHASE 3: Initialize fd*/
+	for (int i = 0; i < FS_OPEN_MAX_COUNT; i++) {
+		file[i].id = -1;
+		file[i].offset = 0;
+		file[i].index = -1;
 	}
 
 	return 0;
@@ -207,20 +227,63 @@ int fs_ls(void)
 	return 0; 
 }
 
-//int fs_open(const char *filename)
-//{
+int fs_open(const char *filename)
+{
 	/* TODO: Phase 3 */
-//}
+	if (openFiles > FS_OPEN_MAX_COUNT) // rename numFilesOpen
+		return -1;
 
-//int fs_close(int fd)
-//{
-	/* TODO: Phase 3 */
-//}
+	for (int j = 0; j < FS_FILE_MAX_COUNT; j++) {
+		if (strncmp((char*)root[j].name, filename, strlen(filename)) == 0) {
+			for (int k = 0; k < FS_FILE_MAX_COUNT; k++) {
+				if (file[k].id == -1) {
+					file[k].id = fileID;
+					file[k].index = j;
+					file[k].offset = 0; // change offset?
+					fileID++;
+					openFiles++;
+					return file[k].id;
+				}
+			}
+		}
+	}
+	return -1;
+}
 
-//int fs_stat(int fd)
-//{
+int fs_close(int fd)
+{
 	/* TODO: Phase 3 */
-//}
+	{
+	if (fd < 0 || fd > fileID)
+		return -1;
+
+	int i;
+	for (i = 0; i < FS_OPEN_MAX_COUNT; i++) {
+		if (file[i].id == fd) {
+			file[i].id = -1;
+			file[i].offset = 0;
+			file[i].index = -1;
+			openFiles--;
+			return 0;
+		}
+	}
+	return -1;
+}
+}
+
+int fs_stat(int fd)
+{
+	/* TODO: Phase 3 */
+	if (fd > fileID || fd < 0)
+		return -1;
+
+	int i;
+	for (i = 0; i < FS_OPEN_MAX_COUNT; i++) {
+		if (file[i].id == fd)
+			return root[file[i].index].size;
+	}
+	return -1;
+}
 
 //int fs_lseek(int fd, size_t offset)
 //{

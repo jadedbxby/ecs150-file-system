@@ -137,7 +137,7 @@ int fs_stat(int fd);
  * invalid (i.e., out of bounds, or not currently open), or if @offset is larger
  * than the current file size. 0 otherwise.
  */
-//int fs_lseek(int fd, size_t offset);
+int fs_lseek(int fd, size_t offset);
 
 /**
  * fs_write - Write to a file
@@ -159,7 +159,7 @@ int fs_stat(int fd);
  * invalid (out of bounds or not currently open), or if @buf is NULL. Otherwise
  * return the number of bytes actually written.
  */
-//int fs_write(int fd, void *buf, size_t count);
+int fs_write(int fd, void *buf, size_t count);
 
 /**
  * fs_read - Read from a file
@@ -180,6 +180,6 @@ int fs_stat(int fd);
  * invalid (out of bounds or not currently open), or if @buf is NULL. Otherwise
  * return the number of bytes actually read.
  */
-//int fs_read(int fd, void *buf, size_t count);
+int fs_read(int fd, void *buf, size_t count);
 
 #endif /* _FS_H */

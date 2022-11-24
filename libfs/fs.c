@@ -253,7 +253,7 @@ int fs_ls(void)
 int fs_open(const char *filename)
 {
 	/* TODO: Phase 3 */
-	if (openFiles > FS_OPEN_MAX_COUNT) // rename numFilesOpen
+	if (open_count > FS_OPEN_MAX_COUNT) // 
 		return -1;
 
 	for (int j = 0; j < FS_FILE_MAX_COUNT; j++) {
@@ -308,17 +308,17 @@ int fs_stat(int fd)
 	return -1;
 }
 
-//int fs_lseek(int fd, size_t offset)
-//{
+int fs_lseek(int fd, size_t offset)
+{
 	/* TODO: Phase 3 */
-//}
+}
 
-//int fs_write(int fd, void *buf, size_t count)
-//{
+int fs_write(int fd, void *buf, size_t count)
+{
 	/* TODO: Phase 4 */
-//}
+}
 
-//int fs_read(int fd, void *buf, size_t count)
-//{
+int fs_read(int fd, void *buf, size_t count)
+{
 	/* TODO: Phase 4 */
-//}
+}

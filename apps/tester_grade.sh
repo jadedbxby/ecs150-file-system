@@ -217,32 +217,32 @@ create_simple() {
 #
 
 # read one block
-#read_block() {
- #   log "\n--- Running ${FUNCNAME} ---"
+read_block() {
+    log "\n--- Running ${FUNCNAME} ---"
 
-#	run_tool ./fs_make.x test.fs 10
-#	python3 -c "for i in range(4096): print('a', end='')" > test-file-1
-#	run_tool ./fs_ref.x add test.fs test-file-1
-#  cat <<END_SCRIPT > read_block.script
-#MOUNT
-#OPEN	test-file-1
-#READ	4096	FILE	test-file-1
-#CLOSE
-#UMOUNT
-#END_SCRIPT
-    #run_test ./test_fs.x script test.fs read_block.script
+	run_tool ./fs_make.x test.fs 10
+	python3 -c "for i in range(4096): print('a', end='')" > test-file-1
+	run_tool ./fs_ref.x add test.fs test-file-1
+    cat <<END_SCRIPT > read_block.script
+MOUNT
+OPEN	test-file-1
+READ	4096	FILE	test-file-1
+CLOSE
+UMOUNT
+END_SCRIPT
+    run_test ./test_fs.x script test.fs read_block.script
 
-	#rm -f test.fs test-file-1 read_block.script
+	rm -f test.fs test-file-1 read_block.script
 
-	#local line_array=()
-	#line_array+=("$(select_line "${STDOUT}" "3")")
-	#local corr_array=()
-	#corr_array+=("Read 4096 bytes from file. Compared 4096 correct.")
+	local line_array=()
+	line_array+=("$(select_line "${STDOUT}" "3")")
+	local corr_array=()
+	corr_array+=("Read 4096 bytes from file. Compared 4096 correct.")
 
-   # local score
-   # compare_lines line_array[@] corr_array[@] score
-   # log "Score: ${score}"
-#}
+    local score
+    compare_lines line_array[@] corr_array[@] score
+    log "Score: ${score}"
+}
 
 #
 # Run tests
@@ -254,7 +254,7 @@ run_tests() {
 	# Phase 2
 	create_simple
     # Phase 3 + 4
-	#read_block
+	read_block
 }
 
 make_fs() {

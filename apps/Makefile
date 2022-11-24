@@ -1,7 +1,8 @@
 # Target programs
-programs := simple_reader.x		\
-	simple_writer.x \
-	test_fs \
+programs := \
+			simple_writer.x \
+			simple_reader.x \
+			test_fs.x
 
 # File-system library
 FSLIB := libfs
@@ -14,7 +15,7 @@ all: $(programs)
 # Avoid builtin rules and variables
 MAKEFLAGS += -rR
 
-# Don't print the commands unless explicitely requested with `make V=1`
+# Don't print the commands unless explicitly requested with `make V=1`
 ifneq ($(V),1)
 Q = @
 V = 0
@@ -23,10 +24,10 @@ endif
 # Current directory
 CUR_PWD := $(shell pwd)
 
-#Compilation toolchain 
+# Define compilation toolchain
 CC	= gcc
 
-#Flags 
+# General gcc options
 CFLAGS	:= -Wall -Werror
 CFLAGS	+= -pipe
 ## Debug flag
@@ -35,44 +36,43 @@ CFLAGS	+= -O2
 else
 CFLAGS	+= -g
 endif
+## Include path
+CFLAGS 	+= -I$(FSPATH)
+## Dependency generation
+CFLAGS	+= -MMD
 
-#Linker options
+# Linker options
 LDFLAGS := -L$(FSPATH) -lfs
 
-#Include path
-INCLUDE := -I$(FSPATH)
-
-#Generate dependencies
-DEPFLAGS = -MMD -MF $(@:.o=.d)
-
-#Application objects to compile
+# Application objects to compile
 objs := $(patsubst %.x,%.o,$(programs))
 
-#Include dependencies
+# Include dependencies
 deps := $(patsubst %.o,%.d,$(objs))
 -include $(deps)
 
-#Rule for libfs.a
-$(libfs):
+# Rule for libfs.a
+$(libfs): FORCE
 	@echo "MAKE	$@"
 	$(Q)$(MAKE) V=$(V) D=$(D) -C $(FSPATH)
 
-#Generic rule for linking final applications
+# Generic rule for linking final applications
 %.x: %.o $(libfs)
 	@echo "LD	$@"
-	$(Q)$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
+	$(Q)$(CC) -o $@ $< $(LDFLAGS)
 
-#Generic rule for compiling objects
+# Generic rule for compiling objects
 %.o: %.c
 	@echo "CC	$@"
-	$(Q)$(CC) $(CFLAGS) $(INCLUDE) -c -o $@ $< $(DEPFLAGS)
+	$(Q)$(CC) $(CFLAGS) -c -o $@ $<
 
-#Cleaning rule
-clean:
+# Cleaning rule
+clean: FORCE
 	@echo "CLEAN	$(CUR_PWD)"
-	$(Q)$(MAKE) V=$(V) -C $(FSPATH) clean
-	$(Q)rm -rf $(objs) $(deps) $(programs) 
+	$(Q)$(MAKE) V=$(V) D=$(D) -C $(FSPATH) clean
+	$(Q)rm -rf $(objs) $(deps) $(programs)
 
-#Keep object files around
+# Keep object files around
 .PRECIOUS: %.o
-.PHONY: clean $(libfs)
+.PHONY: FORCE
+FORCE:

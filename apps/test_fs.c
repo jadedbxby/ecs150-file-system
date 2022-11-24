@@ -142,20 +142,10 @@ void thread_fs_script(void *arg)
 
 			printf("CLOSE successful.\n");
 
-		/*} else if (strcmp(command, "SEEK") == 0) {
-			offset = atoi(command_args[1]);*/
-
-			/*if (fs_lseek(fs_fd, offset)) {
-				fs_umount();
-				die("Cannot seek to position");
-			} else {
-				printf("SEEK successful.\n");
-			}*/
-			/*
-			}else if (strcmp(command, "WRITE") == 0) {
+		} else if (strcmp(command, "WRITE") == 0) {
 			data_source = command_args[1];
-			data_description = command_args[2];*/
-*/
+			data_description = command_args[2];
+
 			if (strcmp(data_source, "DATA") == 0) {
 				data = data_description;
 				data_size = strlen(data);
@@ -185,83 +175,12 @@ void thread_fs_script(void *arg)
 				die_perror("Could not find data to write");
 			}
 
-			//count = fs_write(fs_fd, data, data_size);
-			/*if (count < 0) {
-				fs_umount();
-				die("write error");
-			}*/
-			//printf("Wrote %d bytes to file.\n", count); 
-			
+	
+			printf("Wrote %d bytes to file.\n", count);
 
-		} else if (strcmp(command, "READ") == 0) {
-			int read_req_length = atoi(command_args[1]);
-			data_source = command_args[2];
-			data_description = command_args[3];
-
-			char file_loaded = 0;
-
-			if (strcmp(data_source, "DATA") == 0) {
-				data = data_description;
-				data_size = strlen(data);
-			} else if (strcmp(data_source, "FILE") == 0) {
-				data_fd = open(data_description, O_RDONLY);
-				if (data_fd < 0) {
-					fs_umount();
-					die_perror("open");
-				}
-				if (fstat(data_fd, &st)) {
-					fs_umount();
-					die_perror("fstat");
-				}
-				if (!S_ISREG(st.st_mode)) {
-					fs_umount();
-					die("Not a regular file: %s\n", data_description);
-				}
-
-				FILE *data_file = fopen(data_description, "r");
-				data_size = st.st_size;
-				data = calloc(data_size+1, sizeof(char));
-				size_t n = fread (data, sizeof(char), data_size, data_file);
-				assert(n == sizeof(char) * data_size);
-				fclose(data_file);
-				file_loaded = 1;
-			} else {
-				fs_umount();
-				die("Invalid data description");
-			}
-
-			if (!data) {
-				fs_umount();
-				die_perror("Could not find data to write");
-			}
-
-			if (read_req_length < 0) {
-				fs_umount();
-				die("invalid data read length");
-			}
-
-			//read_buf = calloc(read_req_length+1, sizeof(char));
-			//count = fs_read(fs_fd, read_buf, read_req_length);
-
-			if (count < 0) {
-				fs_umount();
-				die("read error");
-			}
-
-			// both data and read_buf were allocated with an extra zero byte
-			// +1 here to check for the canaries
-			if (memcmp(data, read_buf, data_size+1) == 0)
-				printf("Read %d bytes from file. Compared %d correct.\n", count, data_size);
-			else
-				printf("Read unexpected data! %s read vs given %s\n", read_buf, data);
-
-			free(read_buf);
-			if(file_loaded){
-				free(data);
-			}
 		}
+			
 	}
-
 	/* unmount at the end just to be safe in case there is
 	   no UMOUNT command in script */
 	if (mounted && fs_umount())
@@ -356,8 +275,6 @@ void thread_fs_cat(void *arg)
 		die("Cannot malloc");
 	}
 
-	//read = fs_read(fs_fd, buf, stat);
-
 	if (fs_close(fs_fd)) {
 		fs_umount();
 		die("Cannot close file");
@@ -399,7 +316,7 @@ void thread_fs_rm(void *arg)
 	printf("Removed file '%s'\n", filename);
 }
 
-/*void thread_fs_add(void *arg)
+void thread_fs_add(void *arg)
 {
 	struct thread_arg *t_arg = arg;
 	char *diskname, *filename, *buf;
@@ -411,26 +328,26 @@ void thread_fs_rm(void *arg)
 		die("Usage: <diskname> <host filename>");
 
 	diskname = t_arg->argv[0];
-	filename = t_arg->argv[1]; */
+	filename = t_arg->argv[1];
 
 	/* Open file on host computer */
-	/*fd = open(filename, O_RDONLY);
+	fd = open(filename, O_RDONLY);
 	if (fd < 0)
 		die_perror("open");
 	if (fstat(fd, &st))
 		die_perror("fstat");
 	if (!S_ISREG(st.st_mode))
-		die("Not a regular file: %s\n", filename);*/
+		die("Not a regular file: %s\n", filename);
 
-	/* Map file into buffer 
+	/* Map file into buffer */
 	buf = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (!buf)
-		die_perror("mmap"); */
+		die_perror("mmap");
 
 	/* Now, deal with our filesystem:
 	 * - mount, create a new file, copy content of host file into this new
 	 *   file, close the new file, and umount
-	 
+	 */
 	if (fs_mount(diskname))
 		die("Cannot mount diskname");
 
@@ -445,7 +362,6 @@ void thread_fs_rm(void *arg)
 		die("Cannot open file");
 	}
 
-	written = fs_write(fs_fd, buf, st.st_size);
 
 	if (fs_close(fs_fd)) {
 		fs_umount();
@@ -460,7 +376,7 @@ void thread_fs_rm(void *arg)
 
 	munmap(buf, st.st_size);
 	close(fd);
-}*/
+}
 
 void thread_fs_ls(void *arg)
 {

@@ -9,6 +9,7 @@
 
 /*End-of-Chain FAT*/
 #define FAT_EOC 0xFFFF
+/* Signature*/
 #define SIG "ECS150FS"
 
 /* TODO: Phase 1 */
@@ -253,7 +254,7 @@ int fs_ls(void)
 int fs_open(const char *filename)
 {
 	/* TODO: Phase 3 */
-	if (open_count > FS_OPEN_MAX_COUNT) // 
+	if (openFiles > FS_OPEN_MAX_COUNT) // 
 		return -1;
 
 	for (int j = 0; j < FS_FILE_MAX_COUNT; j++) {
@@ -297,7 +298,7 @@ int fs_close(int fd)
 int fs_stat(int fd)
 {
 	/* TODO: Phase 3 */
-	if (fd > fileID || fd < 0)
+	if (fd > fileID || fd < 0) //wrong descriptor check 
 		return -1;
 
 	int i;
@@ -311,14 +312,170 @@ int fs_stat(int fd)
 int fs_lseek(int fd, size_t offset)
 {
 	/* TODO: Phase 3 */
+	int fd_size = fs_stat(fd);
+	if(fd_size == -1 || offset > fd_size)
+		return -1;
+	
+	int i;
+	for(i = 0; i< FS_OPEN_MAX_COUNT; i++) {
+		if(file[i].id == fd) {
+			file[i].offset = offset;
+			return 0;
+		}
+	}
+	return -1;
 }
 
-int fs_write(int fd, void *buf, size_t count)
+/* Get fd_index in the open file descriptor*/
+int file_index(int fd)
 {
-	/* TODO: Phase 4 */
+	if (fd > idCount || fd < 0)
+		return -1; //invalid fd
+
+	for(int i = 0; i < FS_OPEN_MAX_COUNT; i++) {
+		if(file[i].id == fd){ //found fd
+			return i;
+		}
+	}
+	return -1; // fd not found
+}
+
+int block_ind(int fd)
+{
+	int fdIndex = file_index(fd); 
+	int rootIndex = file[fdIndex].index;
+	uint16_t dataIndex = root[rootIndex].indexFirstBlock; 
+
+	int offset = file[fd].offset;
+	while(offset >= BLOCK_SIZE) { //iterate thru blocks
+		dataIndex = fat[dataIndex].content;
+		if (dataIndex == FAT_EOC) 
+			return -1;
+		offset = offset - BLOCK_SIZE;
+	}
+
+	return dataIndex + sblk->dataIndex;
 }
 
 int fs_read(int fd, void *buf, size_t count)
 {
 	/* TODO: Phase 4 */
+	int fdIndex = file_index(fd);
+	if (fdIndex == -1)
+		return -1; 
+
+	int buf_off = 0; 
+	size_t toRead = count; 
+	size_t leftOff, rightOff, bytesRead; 
+
+	int i = 0; 
+	while(toRead != 0) { 
+
+		leftOff = 0;
+		if (i == 0)
+			leftOff = file[fdIndex].offset % BLOCK_SIZE;
+	
+		rightOff = 0;
+		if (toRead + leftOff < BLOCK_SIZE) {
+			rightOff = BLOCK_SIZE - toRead - leftOff;
+		}
+
+		
+		void *bounceBuffer = malloc(BLOCK_SIZE);
+		if (block_read(block_ind(fd), bounceBuffer) == -1) {
+			fprintf(stderr, "Error in block reading");
+			return count - toRead; 
+		}
+
+
+		bytesRead = BLOCK_SIZE - leftOff - rightOff;
+		memcpy((char*)buf+buf_off, (char*)bounceBuffer+leftOff, bytesRead); 
+
+		
+		file[fd].offset = file[fd].offset + bytesRead; 
+		buf_off = buf_off + bytesRead;
+		toRead = toRead - bytesRead; 
+		free(bounceBuffer);
+		i++;
+	}
+
+	return count - toRead; 
+}
+
+
+void set_file_size(int fd, int sizeInc) {
+	int fdIndex = file_index(fd); 
+	int rootIndex = file[fdIndex].index;
+	root[rootIndex].size += sizeInc;
+}
+
+
+void allocate_block(int fd){
+
+	int fdIndex = file_index(fd);
+	int rootIndex = file[fdIndex].index;
+	uint16_t dataIndex = root[rootIndex].indexFirstBlock;
+	uint16_t i = dataIndex; 
+	while(fat[i].content != FAT_EOC){
+		i = fat[i].content;
+	}
+
+	int newIndex;
+	if ((newIndex = find_empty_fat()) == -1) { 
+		return;
+	} else {
+		fat[i].content = newIndex;
+		fat[fat[i].content].content = FAT_EOC;
+	}
+}
+
+int fs_write(int fd, void *buf, size_t count)
+{
+	/* TODO: Phase 4 */
+	int fdIndex = file_index(fd);
+	if (fdIndex == -1)
+		return -1; 
+
+	int buf_off = 0; 
+	size_t toWrite = count; 
+	size_t leftOff, rightOff, bytes_w; 
+
+	int i = 0; 
+	while(toWrite != 0) { 
+
+		leftOff = 0;
+		if (i == 0)
+			leftOff = file[fdIndex].offset % BLOCK_SIZE;
+
+		rightOff = 0;
+		if (toWrite + leftOff < BLOCK_SIZE) {
+			rightOff = BLOCK_SIZE - toWrite - leftOff;
+		}
+
+		void *bounceBuffer = malloc(BLOCK_SIZE);
+		if (block_ind(fd) == -1) { 
+			if (num_free_fat() <= 0) { 
+				set_file_size(fd, count - toWrite);
+				return count - toWrite; 
+			} else { 
+				allocate_block(fd);
+			}
+		} else {
+			block_read(block_ind(fd), bounceBuffer);
+		}
+
+		
+		bytes_w = BLOCK_SIZE - leftOff - rightOff;
+		memcpy((char*)bounceBuffer+leftOff, (char*)buf+buf_off, bytes_w); 
+
+		block_write(block_ind(fd), bounceBuffer); 
+
+		file[fd].offset = file[fd].offset + bytes_w; 
+		buf_off = buf_off + bytes_w; 
+		toWrite = toWrite - bytes_w;
+		free(bounceBuffer);
+		i++;
+	}
+	set_file_size(fd, count - toWrite);
+	return count - toWrite; 
 }

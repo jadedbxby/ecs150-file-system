@@ -354,7 +354,7 @@ int block_ind(int fd)
 		offset = offset - BLOCK_SIZE;
 	}
 
-	return dataIndex + sup_inst->block1_index;
+	return dataIndex + sup_inst->block_start_index;
 }
 
 int fs_read(int fd, void *buf, size_t count)

@@ -127,8 +127,8 @@ int fs_umount(void)
 int free_fat_count() {
 	int c = 0;
 	for (int i=1; i < sup_inst->data_blocks; i++) { 
-		if(fat[i].content == 0) //check if empty 
-			count++;
+		if(fat_inst[i].content == 0) //check if empty 
+			c++;
 	}
 	return c;
 }
@@ -150,7 +150,7 @@ int fs_info(void)
 	printf("FS Info: \n ");
 	printf("total_blk_count= %d \n",sup_inst->tot_blocks);
 	printf("fat_blk_count= %d \n",sup_inst->fat_blocks);
-	printf("rdir_blk=: %d \n",sup_inst->sup_inst->root_index);
+	printf("rdir_blk=: %d \n",sup_inst->root_index);
 	printf("data_blk=%d\n", sup_inst->block_start_index);
 	printf("data_blk_count=%d\n: %d \n",sup_inst->data_blocks);
 

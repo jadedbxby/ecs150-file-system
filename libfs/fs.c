@@ -163,11 +163,47 @@ int fs_create(const char *filename)
 int fs_delete(const char *filename)
 {
 	/* TODO: Phase 2 */
+	int slot;
+
+	//file doesnt exist check
+	if(slot == FS_FILE_MAX_COUNT) {
+		return -1;
+	}
+
+	//deleting 
+	for (slot = 0; slot < FS_FILE_MAX_COUNT; slot++) {
+		//if file found in block 
+		if(strcmp((char*)root_inst[slot].file_name), filename, strlen(filename) == 0) {
+			uint16_t i = root_inst[slot].block1_index;
+			//go through entrres in fat and empty it 
+			while(i != FAT_EOC) {
+				uint16_t j = fat_inst[i].flat_array;
+				fat_inst[i].flat_array = 0;
+				i = j; 
+			}
+			break;
+		}
+	}
+	return 0; 
 }
 
 int fs_ls(void)
 {
 	/* TODO: Phase 2 */
+
+	for(int i = 0; i < FS_FILE_MAX_COUNT; i++) {
+		//non empty filename check
+		if((char)*(root_inst[i].file_name) != '\0') {
+			printf("List of files in the system: \n");
+			printf("file: %s", root_inst[i],file_name);
+		}
+	return 0; 
+	}
+
+	//no disk opened check 
+	if(block_disk_count() == -1) {
+		return -1;
+	}
 
 }
 

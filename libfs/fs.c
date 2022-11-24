@@ -234,7 +234,7 @@ int fs_open(const char *filename)
 		return -1;
 
 	for (int j = 0; j < FS_FILE_MAX_COUNT; j++) {
-		if (strncmp((char*)root[j].name, filename, strlen(filename)) == 0) {
+		if (strncmp((char*)root_inst[j].file_name, filename, strlen(filename)) == 0) {
 			for (int k = 0; k < FS_FILE_MAX_COUNT; k++) {
 				if (file[k].id == -1) {
 					file[k].id = fileID;
@@ -280,7 +280,7 @@ int fs_stat(int fd)
 	int i;
 	for (i = 0; i < FS_OPEN_MAX_COUNT; i++) {
 		if (file[i].id == fd)
-			return root[file[i].index].size;
+			return root_inst[file[i].index].file_size;
 	}
 	return -1;
 }

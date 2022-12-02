@@ -74,7 +74,9 @@ int init_fat() {
 	for(i = 1; i <= sup_inst->fat_blocks; i++) {
 		block_read(i, (char*)fat_inst + BLOCK_SIZE*(i-1));
 		/* Read the content of virtual disk's block @block 
-		(%BLOCK_SIZE bytes) into* buffer @buf.*/
+		(%BLOCK_SIZE bytes) into buffer @buf. 
+		entry contents must be added to the data block start index 
+		in order to find the real block number on disk.*/
 		}
 
     return 0;
@@ -154,6 +156,8 @@ int fs_umount(void)
 	block_write(0, sup_inst);
 	for (int i = 1; i <= sup_inst->fat_blocks; i++) {
 		block_write(i, (char*)fat_inst + BLOCK_SIZE*(i - 1));
+		/* entry contents must be added to the data block start index 
+		in order to find the real block number on disk.*/
 	}
 
 	block_write(sup_inst->root_index, root_inst);

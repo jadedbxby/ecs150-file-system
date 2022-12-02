@@ -73,7 +73,9 @@ int init_fat() {
     int i;
 	for(i = 1; i <= sup_inst->fat_blocks; i++) {
 		block_read(i, (char*)fat_inst + BLOCK_SIZE*(i-1));
-	}
+		/* Read the content of virtual disk's block @block 
+		(%BLOCK_SIZE bytes) into* buffer @buf.*/
+		}
 
     return 0;
 	

@@ -68,8 +68,6 @@ int init_sup() {
 
 int init_fat() {
     fat_inst = malloc((sup_inst->fat_blocks)*BLOCK_SIZE);
-    
-	//
     int i;
 	for(i = 1; i <= sup_inst->fat_blocks; i++) {
 		block_read(i, (char*)fat_inst + BLOCK_SIZE*(i-1));
@@ -153,6 +151,7 @@ int fs_mount(const char *diskname)
 int fs_umount(void)
 {
 	/* TODO: Phase 1 */
+	/* Writes back to the disk the meta-data*/
 	block_write(0, sup_inst);
 	for (int i = 1; i <= sup_inst->fat_blocks; i++) {
 		block_write(i, (char*)fat_inst + BLOCK_SIZE*(i - 1));
@@ -233,9 +232,11 @@ int fs_create(const char *filename)
 	for (free_slot = 0; free_slot < FS_FILE_MAX_COUNT; free_slot++) {
 		//if root index pointed to is empty 
 		if((char) *(root_inst[free_slot].file_name) == '\0') {
+			/* Copy the info about the file into the root directory */
 			strcpy((char*) root_inst[free_slot].file_name, filename);
 			root_inst[free_slot].file_size = 0;
 			root_inst[free_slot].block1_index = free_fat();
+			// Set the first block's index to FATS end of chain value 
 			fat_inst[root_inst[free_slot].block1_index].flat_array = FAT_EOC;
 			break;
 		}
@@ -278,6 +279,7 @@ int fs_delete(const char *filename)
 int fs_ls(void)
 {
 	/* TODO: Phase 2 */
+	/* List information about the files located in the root directory */
 	int i;
 	for(i = 0; i < FS_FILE_MAX_COUNT; i++) {
 		//non empty filename check
@@ -297,6 +299,13 @@ int fs_ls(void)
 int fs_open(const char *filename)
 {
 	/* TODO: Phase 3 */
+	
+	/*Open file named @filename for reading and writing, and return the
+ 	corresponding file descriptor.  */
+	
+	/* !!!!! locates the specified file in the root directory and
+	creates a new entry in the array of file descriptors !!!!! */
+	
 	//max allowed open files check
 	if (openFiles > FS_OPEN_MAX_COUNT) 
 		return -1;
@@ -306,7 +315,7 @@ int fs_open(const char *filename)
 		if (strncmp((char*)root_inst[j].file_name, filename, strlen(filename)) == 0) {
 			//look for epty entree to open to
 			for (int k = 0; k < FS_FILE_MAX_COUNT; k++) {
-				if (file[k].id == -1) {
+				if (file[k].id == -1) { // -1 means empty entree
 					file[k].id = fileID;
 					file[k].index = j;
 					file[k].offset = 0; 
@@ -345,6 +354,9 @@ int fs_close(int fd)
 int fs_stat(int fd)
 {
 	/* TODO: Phase 3 */
+	
+	/* Gets the current size of the file pointed by file descriptor @fd. */
+	
 	//wrong descriptor check 
 	if (fd > fileID || fd < 0) 
 		return -1;
@@ -353,14 +365,17 @@ int fs_stat(int fd)
 	for (i = 0; i < FS_OPEN_MAX_COUNT; i++) {
 		//file found at correct fd check
 		if (file[i].id == fd)
-			return root_inst[file[i].index].file_size;
+			return root_inst[file[i].index].file_size; //returns size 
 	}
 	return -1; //file not found check
 }
 
 int fs_lseek(int fd, size_t offset)
 {
-	/* TODO: Phase 3 */
+/* Set the file offset (used for read and write operations) associated with file
+ * descriptor @fd to the argument @offset. To append to a file, one can call
+ * fs_lseek(fd, fs_stat(fd)); -- SORT OF RANDOM ACCESS */
+	
 	int fd_size = fs_stat(fd);
 	//wrong file size check
 	//out of scope check 
@@ -391,7 +406,12 @@ int file_index(int fd)
 	}
 	return -1; // fd not found
 }
-/* Helper function to get data block at offset */
+/* Helper function to get data block at offset 
+
+returns the index of the block
+corresponding to the file and its offset.
+
+*/
 int block_index(int fd)
 {
 	int fdIndex = file_index(fd); 
@@ -414,6 +434,9 @@ int block_index(int fd)
 int fs_read(int fd, void *buf, size_t count)
 {
 	/* TODO: Phase 4 */
+	
+	/* READING AND WRITING CAN ONLY BE DONE SEQUENTIAL -- ONE BLOCK BY ONE*/
+	
 	int fdIndex = file_index(fd); //current fd
 	
 	//invalid fd check 
@@ -428,6 +451,12 @@ int fs_read(int fd, void *buf, size_t count)
 	int i = 0; 
 	//while not done reading 
 	while(remainR != 0) { 
+		
+		
+/* The number of bytes read can be smaller than @count if there are less than
+ * @count bytes until the end of the file (it can even be 0 if the file offset
+ * is at the end of the file). The file offset of the file descriptor is
+ * implicitly incremented by the number of bytes that were actually read. */
 
 		leftOff = 0;
 		//fisrt block read check
@@ -441,6 +470,10 @@ int fs_read(int fd, void *buf, size_t count)
 		}
 
 		//read into buffer
+			
+	/* simply copy from the bounce buffer to the read buffer in
+	each iteration based on the computed offsets. */
+		
 		void *bounceBuffer = malloc(BLOCK_SIZE);
 		if (block_read(block_index(fd), bounceBuffer) == -1) {
 			fprintf(stderr, "Error in block reading");
@@ -497,6 +530,7 @@ int fs_write(int fd, void *buf, size_t count)
 	int fdIndex = file_index(fd); //current fd
 	
 	//invalid fd check 
+	/* First, we check if a new block must be allocated */
 	if (fdIndex == -1)
 		return -1; 
 
@@ -533,7 +567,9 @@ int fs_write(int fd, void *buf, size_t count)
 		} else {
 			block_read(block_index(fd), bounceBuffer);
 		}
-
+/* obtain a block-sized buffer that contains the current disk data or is empty. We
+overwrite to a part of this buffer based on the computed offsets, and
+subsequently we place the buffer back in the block */
 		//write into remaining free space
 		bytes_w = BLOCK_SIZE - leftOff - rightOff;
 		memcpy((char*)bounceBuffer+leftOff, (char*)buf+buf_off, bytes_w); 

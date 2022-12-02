@@ -49,7 +49,7 @@ typedef struct FileDescriptor{
 }FileDescriptor;
 
 
-/* Instantiate local datastructs */
+/* Instantiate global datastructs to be accesible by functions */
 static superblock* sup_inst;
 static fat* fat_inst;
 static root root_inst[128]; 
